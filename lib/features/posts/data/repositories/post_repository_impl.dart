@@ -31,7 +31,7 @@ class PostRepositoryImpl implements PostRepository {
       if (cached is List && cached.isNotEmpty) {
         return cached.map((item) => Post.fromMap(Map<String, dynamic>.from(item))).toList();
       }
-      throw NetworkException(e.message ?? 'Erreur de chargement des posts');
+      throw NetworkException.fromDio(e, fallback: 'Impossible de charger les publications.');
     }
   }
 }

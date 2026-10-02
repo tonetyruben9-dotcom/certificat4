@@ -7,6 +7,6 @@ class NetworkInfo {
 
   Future<bool> get isConnected async {
     final result = await connectivity.checkConnectivity();
-    return result != ConnectivityResult.none;
+    return result.any((connection) => connection != ConnectivityResult.none);
   }
 }

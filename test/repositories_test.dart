@@ -11,6 +11,8 @@ import 'package:certificat4/features/products/data/repositories/product_reposito
 import 'package:certificat4/features/posts/data/repositories/post_repository_impl.dart';
 import 'package:certificat4/features/products/domain/entities/product.dart';
 import 'package:certificat4/features/posts/domain/entities/post.dart';
+import 'package:certificat4/features/users/data/repositories/user_repository_impl.dart';
+import 'package:certificat4/features/users/domain/entities/app_user.dart';
 
 class MockDio extends Mock implements Dio {}
 
@@ -115,6 +117,66 @@ void main() {
       expect(posts, isA<List<Post>>());
       expect(posts.first.title, 'Hello world');
       expect(posts.first.userId, 5);
+    });
+  });
+
+  group('UserRepositoryImpl', () {
+    test('getUsers maps user data from the API', () async {
+      final dio = MockDio();
+      final repository = UserRepositoryImpl(dio: dio);
+
+      when(() => dio.get(
+        any(),
+        queryParameters: any(named: 'queryParameters'),
+        options: any(named: 'options'),
+      )).thenAnswer((_) async => Response(
+        data: {
+          'users': [
+            {
+              'id': 7,
+              'firstName': 'Ada',
+              'lastName': 'Lovelace',
+              'email': 'ada@example.com',
+              'image': '',
+              'company': {'name': 'Analytical Engines'},
+            }
+          ]
+        },
+        statusCode: 200,
+        requestOptions: RequestOptions(path: '/users'),
+      ));
+
+      final users = await repository.getUsers();
+
+      expect(users, isA<List<AppUser>>());
+      expect(users.single.fullName, 'Ada Lovelace');
+      expect(users.single.company, 'Analytical Engines');
+    });
+
+    test('returns cached users when the API is unavailable', () async {
+      await HiveService.instance.putJson('cached_users', [
+        {
+          'id': 7,
+          'firstName': 'Ada',
+          'lastName': 'Lovelace',
+          'email': 'ada@example.com',
+          'image': '',
+          'company': {'name': 'Analytical Engines'},
+        }
+      ]);
+      final dio = MockDio();
+      when(() => dio.get(
+        any(),
+        queryParameters: any(named: 'queryParameters'),
+        options: any(named: 'options'),
+      )).thenThrow(DioException(
+        requestOptions: RequestOptions(path: '/users'),
+        type: DioExceptionType.connectionError,
+      ));
+
+      final users = await UserRepositoryImpl(dio: dio).getUsers();
+
+      expect(users.single.email, 'ada@example.com');
     });
   });
 }

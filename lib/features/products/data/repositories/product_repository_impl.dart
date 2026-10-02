@@ -31,7 +31,7 @@ class ProductRepositoryImpl implements ProductRepository {
       if (cached is List && cached.isNotEmpty) {
         return cached.map((item) => Product.fromMap(Map<String, dynamic>.from(item))).toList();
       }
-      throw NetworkException(e.message ?? 'Erreur de chargement des produits');
+      throw NetworkException.fromDio(e, fallback: 'Impossible de charger les produits.');
     }
   }
 }
